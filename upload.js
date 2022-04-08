@@ -1,0 +1,77 @@
+var http = require('http');
+const multer = require('multer')
+const path = require('path');
+const fs = require('fs');
+const directoryPath = path.join("C:/Users/sarth/OneDrive/Desktop/", 'saved');
+var storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, directoryPath)
+    },
+    filename: function (req, file, cb) {
+        cb(null, file.originalname)
+    }
+})
+var upload = multer({
+    storage: storage,
+}).single("filetoupload");
+
+let dir;
+
+http.createServer(function (req, res) {
+    if (req.url == '/fileupload') {
+        upload(req, res, function (err) {
+            if (err) {
+                res.end();
+            }
+            else {
+                res.write("Success, File Uploaded!")
+                res.end()
+            }
+        })
+    }
+    else if (req.url == '/display') {
+        fs.readdir(directoryPath, function (err, files) {
+            if (err) {
+                return console.log('Unable to scan directory: ' + err);
+            }
+            files.forEach(function (file) {
+
+                dir = directoryPath + "/" + file;
+                
+
+                let item = fs.statSync(dir, function (err, stats) { })
+                function formatBytes(bytes, decimals = 2) {
+                    if (bytes === 0) return '0 Bytes';
+                    const k = 1024;
+                    const dm = decimals < 0 ? 0 : decimals;
+                    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+                    const i = Math.floor(Math.log(bytes) / Math.log(k));
+                    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+                }
+                function creation(date) {
+                    const time = String(date).split(" ")[1] + " " + String(date).split(" ")[2] + ", " + String(date).split(" ")[3];
+                    return time;
+                }
+                res.write(`<a href ="/display/${file}" onclick=openfile(dir)` + file + ">" + file + "</a>" + " " + formatBytes(item.size) + " " + creation(item.birthtime) + "<br>");
+                
+                function openfile(data) {
+                    var img = fs.readFileSync(data);
+                    res.writeHead(200, {
+                        'Content-Type': 'image/png'
+                    });
+                    res.end(img, 'binary');
+                }
+            
+            });
+            res.end()
+        });
+    }
+    else {
+        res.writeHead(200, { 'Content-Type': 'text/html' });
+        res.write('<form action="fileupload" method="post" enctype="multipart/form-data">');
+        res.write('<input type="file" name="filetoupload"><br>');
+        res.write('<input type="submit">');
+        res.write('</form>');
+        return res.end();
+    }
+}).listen(3000);
