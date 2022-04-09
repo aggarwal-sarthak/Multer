@@ -1,4 +1,3 @@
-var http = require('http');
 const multer = require('multer')
 const path = require('path');
 const express = require('express');
@@ -37,9 +36,7 @@ app.use("/display", function (req, res) {
             return console.log('Unable to scan directory: ' + err);
         }
         files.forEach(function (file) {
-
             dir = directoryPath + "/" + file;
-
 
             let item = fs.statSync(dir, function (err, stats) { })
             function formatBytes(bytes, decimals = 2) {
@@ -54,20 +51,13 @@ app.use("/display", function (req, res) {
                 const time = String(date).split(" ")[1] + " " + String(date).split(" ")[2] + ", " + String(date).split(" ")[3];
                 return time;
             }
-            res.write(`<a href = "#" onclick=openfile(dir)` + file + ">" + file + "</a>" + " " + formatBytes(item.size) + " " + creation(item.birthtime) + "<br>");
-            
-            function openfile(data) {
-                var img = fs.readFileSync(data);
-                res.writeHead(200, {
-                    'Content-Type': 'image/png'
-                });
-                res.end(img, 'binary');
-            }
-
+            res.write(`<a href = "/files/${file}"` +  ">" + file + "</a>" + " " + formatBytes(item.size) + " " + creation(item.birthtime) + "<br>")
         });
         res.end()
     });
 })
+
+app.use('/files', express.static(directoryPath));
 
 app.use("/", function (req, res) {
     res.writeHead(200, { 'Content-Type': 'text/html' });
